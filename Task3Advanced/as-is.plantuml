@@ -1,0 +1,29 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Конечный пользователь", "Пользователь сервисов платформы «Будущее 2.0»")
+Person(admin, "Администратор", "Технический специалист, управляющий системой")
+
+' === Контейнеры внутри системы ===
+System_Boundary(future20, "Будущее 2.0") {
+    Container(ui, "Клиентский интерфейс оператора", "PowerBuilder", "Устаревшее приложение")
+    Container(dwh, "DWH", "MS SQL Server 2008", "Хранилище данных для аналитики")
+    Container(powerbi, "Power BI", "BI-инструмент", "Визуализация данных из DWH")
+    Container(esb, "ESB", "Apache Camel", "Интеграционная шина для обмена сообщениями")
+    Container(ai, "ИИ-сервисы", "Python", "Модели машинного обучения и NLP")
+    Container(fintech, "Финтех-сервисы", "Golang, Java", "Платежи, расчёты, транзакции")
+    Container(inner, "Внутренние сервисы")
+}
+
+' === Связи между компонентами ===
+Rel(user, ui, "Использует")
+Rel(admin, future20, "Управляет, настраивает")
+
+Rel(ui, dwh, "Медицинские данные, снимки", "SQL")
+Rel_Right(dwh, powerbi, "Поставляет данные", "SQL")
+BiRel_Down(dwh, esb, "")
+BiRel_Left(esb, ai, "Медицинские данные")
+BiRel_Right(esb, fintech, "Финансовые данные")
+Rel(esb, inner, "Внутренние финансовые данные, управление клиниками и т.д.")
+
+@enduml
