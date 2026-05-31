@@ -1,0 +1,133 @@
+@startuml
+' Event Storming — «Будущее 2.0»
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam linetype ortho
+
+' Define stereotypes
+!define Event <<Event>>
+!define Command <<Command>>
+!define Context <<Context>>
+
+package "Supplier System <future>" <<External>> #fff3e0 {
+    [SUPP]
+}
+
+' Bounded contexts as packages
+package "Пациенты" <<Context>> {
+    [C1: Создать профиль пациента] as CreatePatientProfile <<Command>>
+    [C2: Обновить профиль пациента] as UpdatePatientProfile <<Command>>
+
+    [E1: PatientRegistered] as PatientRegistered <<Event>>  #ffeb3b
+    [E2: PatientContactUpdated] as PatientContactUpdated <<Event>>  #ffeb3b
+    [E3: PatientArchived] as PatientArchived <<Event>>  #ffeb3b
+}
+
+package "Медицинские Исследования" <<Context>> {
+    [C3: Запланировать исследование] as ScheduleDeviceStaff <<Command>>
+    [C4: Сгенерировать отчет об исследовании] as GenerateReport <<Command>>
+
+    [E4: MedicalExamScheduled] as MedicalExamScheduled <<Event>>  #ffeb3b
+    [E5: MedicalExamStarted] as MedicalExamStarted <<Event>>  #ffeb3b
+    [E6: MedicalExamCompleted] as MedicalExamCompleted <<Event>>  #ffeb3b
+}
+
+package "ИИ-Анализ" <<Context>> {
+    [C5: Предложить диагноз с помощью ИИ] as AdviseDiagnosis <<Command>>
+    [C6: Валидировать диагноз] as ValidateDiagnosis <<Command>>
+
+    [AI1: AIDiagnosisReady] as AIDiagnosisReady <<Event>>  #ffeb3b
+    [AI2: AIDiagnosisApproved] as AIDiagnosisApproved <<Event>>  #ffeb3b
+    [AI3: AIDiagnosisRejected] as AIDiagnosisRejected <<Event>>  #ffeb3b
+}
+
+package "Лечение" <<Context>> {
+    [C7: Создать план лечения] as CreateTreatmentPlan <<Command>>
+    [C8: Назначить медикаменты и процедуры] as AssignMedicationsProcedures <<Command>>
+
+    [E7: TreatmentPlanCreated] as TreatmentPlanCreated <<Event>>  #ffeb3b
+    [E8: TreatmentPlanUpdated] as TreatmentPlanUpdated <<Event>>  #ffeb3b
+    [E9: AssetsReserved] as AssetsReserved <<Event>>  #ffeb3b
+}
+
+package "Финансы" <<Context>> {
+    [C9: Провести кредитную проверку] as RunCreditCheck <<Command>>
+    [C10: Обновить статус счета] as UpdateInvoiceStatus <<Command>>
+
+    [E10: CreditApplicationSubmitted] as CreditApplicationSubmitted <<Event>>  #ffeb3b
+    [E11: CreditApproved] as CreditApproved <<Event>>  #ffeb3b
+    [E12: CreditRejected] as CreditRejected <<Event>>  #ffeb3b
+    [E13: PaymentProcessed] as PaymentProcessed <<Event>>  #ffeb3b
+}
+
+package "Инвентарь" <<Context>> {
+    [C11: Проверка остатков на складах] as CheckStockLevels <<Command>>
+    [C12: Зарезервировать расходные материалы] as ReserveAssets <<Command>>
+
+    [E14: InventoryLevelUpdated] as InventoryLevelUpdated <<Event>>  #ffeb3b
+    [E15: InventoryLowAlert] as InventoryLowAlert <<Event>>  #ffeb3b
+}
+
+package "Персонал" <<Context>> {
+    [C13: Назначить права доступа] as ProvisionAccessTools <<Command>>
+    [C14: Отозвать права доступа] as RevokeAccess <<Command>>
+
+    [E16: EmployeeOnboarded] as EmployeeOnboarded <<Event>>  #ffeb3b
+    [E17: EmployeeOffboarded] as EmployeeOffboarded <<Event>>  #ffeb3b
+}
+
+package "Аналитика" <<Context>> {
+    [C15: Обновить дашборды] as UpdateDashboards <<Command>>
+    [C16: Подать оповещение] as TriggerAlert <<Command>>
+
+    [AN1: RealTimeAnalyticsSnapshot] as RealTimeAnalyticsSnapshot <<Event>>  #ffeb3b
+    [AN2: FraudDetected] as FraudDetected <<Event>>  #ffeb3b
+}
+
+' Relationships
+PatientRegistered <-- CreatePatientProfile
+PatientContactUpdated <-- UpdatePatientProfile
+PatientArchived <-- UpdatePatientProfile
+
+MedicalExamScheduled <-- ScheduleDeviceStaff
+MedicalExamCompleted --> GenerateReport
+MedicalExamCompleted --> AdviseDiagnosis
+
+AdviseDiagnosis --> AIDiagnosisReady
+AIDiagnosisReady ---> ValidateDiagnosis
+AIDiagnosisApproved <-- ValidateDiagnosis
+AIDiagnosisRejected <-- ValidateDiagnosis
+
+AIDiagnosisApproved --> CreateTreatmentPlan
+CreateTreatmentPlan --> TreatmentPlanCreated
+TreatmentPlanCreated --> AssignMedicationsProcedures
+TreatmentPlanUpdated --> AssignMedicationsProcedures
+AssignMedicationsProcedures --> AssetsReserved
+
+CreditApplicationSubmitted --> RunCreditCheck
+RunCreditCheck --> CreditApproved
+RunCreditCheck --> CreditRejected
+CreditApproved -down-> UpdateInvoiceStatus
+PaymentProcessed -down-> ScheduleDeviceStaff
+PaymentProcessed -down-> UpdateInvoiceStatus
+
+AssetsReserved -right-> ReserveAssets
+ReserveAssets --> InventoryLevelUpdated
+InventoryLevelUpdated --> CheckStockLevels
+CheckStockLevels --> InventoryLowAlert
+InventoryLowAlert -right-> SUPP
+
+EmployeeOnboarded --> ProvisionAccessTools
+EmployeeOffboarded --> RevokeAccess
+
+RealTimeAnalyticsSnapshot --> UpdateDashboards
+FraudDetected --> TriggerAlert
+
+' Formatting
+"Персонал" --[hidden]down-- "Пациенты"
+"Персонал" --[hidden]down-- "Финансы"
+
+@enduml
