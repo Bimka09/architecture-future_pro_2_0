@@ -1,0 +1,95 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' ============= АКТОРЫ =============
+Person(user, "Конечный пользователь", "Пользователь сервисов платформы «Будущее 2.0»")
+Person(admin, "Администратор", "Технический специалист, управляющий системой")
+Person(analyst, "Бизнес-аналитик", "Сотрудник, создающий и использующий отчёты")
+
+' ============= ГРАНИЦА СИСТЕМЫ: БУДУЩЕЕ 2.0 (Целевая архитектура) =============
+System_Boundary(future20, "Будущее 2.0 — Целевая архитектура (3 года)") {
+
+    ' --- Новые компоненты ---
+    Container(data_mesh, "Data Mesh", "Cloud-Native Platform", "Распределённая платформа данных с доменной принадлежностью")
+    Container(data_product_ui, "UI Data Product", "React, TypeScript", "Портал самообслуживания для аналитики")
+    Container(data_product_svc, "Data Product Service", "Python, FastAPI", "API для доступа к бизнес-витринам данных")
+
+    Container(streaming_platform, "Streaming Platform", "Apache Kafka / Pulsar", "Центральная шина событий")
+    Container(schema_registry, "Schema Registry", "Confluent / Apicurio", "Хранение и управление схемами событий")
+    Container(dlq_monitor, "DLQ & Observability", "Prometheus, Grafana, ELK", "Мониторинг потоков, очередей ошибок")
+
+    Container(data_lake, "Data Lake", "Delta Lake / Iceberg", "Хранилище сырых и обогащённых данных в облаке")
+    Container(data_warehouse_modern, "Modern DWH", "Snowflake / BigQuery", "Оптимизированное хранилище для аналитики")
+    Container(catalog, "Data Catalog", "Amundsen / DataHub", "Каталог данных с метаданными и линияжем")
+    data_lake -[hidden]up- data_warehouse_modern
+
+    ' --- Доменные сервисы (событийно-ориентированные) ---
+    Container_Boundary(domain_fintech, "Финтех-домен") {
+        Container(fintech_svc, "Финтех-сервисы", "Golang, Java", "Обработка платежей, транзакций, кредитов")
+        Container(fintech_data_product, "Fintech Data Product", "", "Витрина финансовых показателей")
+        fintech_svc -[hidden]up- fintech_data_product
+    }
+
+    Container_Boundary(domain_medical, "Медицинский домен") {
+        Container(ai_services, "ИИ-сервисы", "Python, TensorFlow", "Анализ медицинских данных, NLP")
+        Container(medical_data_product, "Medical Data Product", "", "Витрина по пациентам, оборудованию, инвентарю")
+        ai_services -[hidden]up- medical_data_product
+    }
+
+    Container_Boundary(domain_internal, "Внутренние сервисы") {
+        Container(inner_svc, "Внутренние сервисы", "Java, Node.js", "Управление клиниками, персоналом, инвентарём")
+        Container(inner_data_product, "Internal Data Product", "", "HR, логистика, управление активами")
+        inner_svc -[hidden]up- inner_data_product
+    }
+
+    ' --- Устаревшие компоненты ---
+    Container(dwh, "DWH", "SQL Server 2008", "Устарвший DWH")
+    Container(ui, "UI", "PowerBuilder", "")
+
+    ' --- Интеграционные компоненты ---
+    Container(anti_corruption_layer, "Anti-Corruption Layer", "Spring Boot", "Преобразование легаси-форматов в события")
+    Container(legacy_bridge, "Legacy Bridge", "Apache Camel", "Временный мост к старым системам (DWH, PowerBuilder)")
+}
+
+' ============= ВНЕШНИЕ СИСТЕМЫ =============
+System_Ext(cloud, "Облачная платформа", "AWS / GCP / Azure")
+System_Ext(pharma, "Фармацевтические компании", "Внешние партнёры")
+System_Ext(electronics, "Производитель электроники", "Поставщик медицинского оборудования")
+
+' ============= СВЯЗИ =============
+Rel(user, data_product_ui, "Использует для аналитики")
+Rel(analyst, data_product_ui, "Создаёт и редактирует отчёты")
+Rel(admin, data_mesh, "Управляет политиками доступа и безопасностью")
+
+Rel(data_product_ui, data_product_svc, "Запросы на данные", "HTTPS/REST")
+Rel(data_product_svc, data_warehouse_modern, "Чтение витрин", "SQL over JDBC")
+Rel_Right(data_product_svc, catalog, "Поиск метаданных", "API")
+
+Rel(streaming_platform, schema_registry, "Регистрация/валидация схем")
+Rel(streaming_platform, dlq_monitor, "Отправка метрик и логов")
+
+Rel(fintech_svc, streaming_platform, "Публикует события: транзакции, платежи", "Kafka Producer")
+Rel(ai_services, streaming_platform, "Публикует события: диагностика, рекомендации", "Kafka Producer")
+Rel(inner_svc, streaming_platform, "Публикует события: HR, инвентарь", "Kafka Producer")
+
+Rel(streaming_platform, fintech_data_product, "Поток данных", "Kafka Consumer")
+Rel(streaming_platform, medical_data_product, "Поток данных", "Kafka Consumer")
+Rel(streaming_platform, inner_data_product, "Поток данных", "Kafka Consumer")
+
+Rel(fintech_data_product, data_warehouse_modern, "Выгрузка агрегаций", "Batch/Streaming")
+Rel(medical_data_product, data_warehouse_modern, "Выгрузка агрегаций")
+Rel(inner_data_product, data_warehouse_modern, "Выгрузка агрегаций")
+
+Rel(data_lake, data_warehouse_modern, "Источник данных", "ETL/ELT")
+Rel(data_lake, streaming_platform, "Ingest сырых событий", "Kafka Connect")
+
+Rel_Right(legacy_bridge, dwh, "Чтение из SQL Server 2008", "JDBC")
+Rel_Down(legacy_bridge, ui, "Интеграция с PowerBuilder", "SOAP/HTTP")
+Rel(legacy_bridge, anti_corruption_layer, "Передача преобразованных данных", "Events")
+
+Rel(anti_corruption_layer, streaming_platform, "Публикация унифицированных событий")
+
+Rel(pharma, data_mesh, "Обмен данными о поставках", "API/Events")
+Rel(electronics, data_mesh, "Получение данных с оборудования", "MQTT/Kafka")
+
+@enduml

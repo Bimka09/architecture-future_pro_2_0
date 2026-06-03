@@ -1,0 +1,7 @@
+*.tfstate
+*.tfstate.*
+crash.log
+.tfplan
+terraform.tfvars
+Task1Advanced/modules/vm/terraform.exe
+Task2Advanced/modules/vm/terraform.exe

@@ -1,0 +1,87 @@
+@startuml
+skinparam rectangle {
+    roundCorner 15
+    borderColor #000000
+    borderWidth 1
+}
+
+skinparam package {
+    backgroundColor #f5f5f5
+    borderColor #707070
+    borderWidth 1
+}
+
+' Определяем стили для типов доменов
+skinparam <<Core>> {
+    backgroundColor #ffe0b2
+    borderColor #fb8c00
+}
+skinparam <<Supporting>> {
+    backgroundColor #c8e6c9
+    borderColor #43a047
+}
+skinparam <<Generic>> {
+    backgroundColor #bbdefb
+    borderColor #1976d2
+}
+
+' === Домены как пакеты ===
+
+package "Медицинский домен \n<<Core>>" as medical {
+    rectangle "Пациенты\n(Bounded Context)" as patients
+    rectangle "Медицинские Исследования\n(Bounded Context)" as exams
+    rectangle "ИИ-Анализ\n(Bounded Context)" as ai
+    rectangle "Лечение\n(Bounded Context)" as treatment
+}
+
+package "Финансовый домен \n<<Supporting>>" as finance {
+    rectangle "Финансы\n(Bounded Context)" as payments
+}
+
+package "Операционный домен \n<<Generic>>" as operations {
+    rectangle "Инвентарь\n(Bounded Context)" as inventory
+    rectangle "Персонал\n(Bounded Context)" as hr
+}
+
+package "Аналитический домен \n<<Supporting>>" as analytics {
+    rectangle "Аналитика\n(Bounded Context)" as reporting
+}
+
+' === Связи между Bounded Context'ами через события ===
+
+patients --> exams : PatientRegistered\n→ начать обследование
+exams --> ai : MedicalExamCompleted\n→ начать анализ
+ai --> treatment : AIDiagnosisGenerated\n→ назначить лечение
+treatment -up-> payments : TreatmentPlanCreated\n→ выставить счёт
+payments -> reporting : PaymentProcessed\n→ обновить KPI
+inventory ---> reporting : InventoryLowAlert\n→ показать в дашборде
+hr --> reporting : EmployeeOnboarded\n→ обновить отчётность
+
+' === Заголовок и легенда ===
+title Архитектура системы «Будущее 2.0»\nДомены и Bounded Contexts
+
+note top of medical
+  **Медицинский домен** — ядро бизнеса.
+  Включает ключевые процессы диагностики и лечения.
+  Высокая уникальность и стратегическая важность.
+end note
+
+note top of finance
+  **Финансовый домен** — поддерживающий.
+  Обеспечивает оплату услуг и кредитование.
+  Может использовать стандартные решения.
+end note
+
+note top of operations
+  **Операционный домен** — общий (generic).
+  Управление ресурсами: склад, персонал.
+  Не стратегический, но необходим.
+end note
+
+note bottom of analytics
+  **Аналитический домен** — поддерживающий.
+  Построение отчётов и дашбордов в near-real-time.
+  Работает на основе событий из других контекстов.
+end note
+
+@enduml
